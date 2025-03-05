@@ -117,8 +117,8 @@ func (s *Server) HandlePostTaskResult(w http.ResponseWriter, r *http.Request) {
 	defer s.mutex.Unlock()
 
 	if expr, exists := s.expressions[result.ID]; exists {
-		expr.Status = "done"
-		resultStr := fmt.Sprintf("%f", result.Result) 
+		expr.Status = models.StatusCompleted // Исправлено с "done" на StatusCompleted
+		resultStr := fmt.Sprintf("%f", result.Result)
 		expr.Result = &resultStr
 		w.WriteHeader(http.StatusOK)
 		s.logger.Info("Task result processed", zap.String("id", result.ID), zap.Float64("result", result.Result))
