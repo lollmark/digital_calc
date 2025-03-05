@@ -5,14 +5,12 @@ import (
 	"sync"
 )
 
-// Storage управляет хранением выражений и задач.
 type Storage struct {
 	expressions map[string]*models.Expression
 	taskQueue   chan models.Task
 	mutex       sync.Mutex
 }
 
-// NewStorage создает новое хранилище.
 func NewStorage() *Storage {
 	return &Storage{
 		expressions: make(map[string]*models.Expression),
@@ -20,26 +18,22 @@ func NewStorage() *Storage {
 	}
 }
 
-// AddExpression добавляет выражение в хранилище.
 func (s *Storage) AddExpression(expr *models.Expression) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.expressions[expr.ID] = expr
 }
 
-// AddTask добавляет задачу в очередь.
 func (s *Storage) AddTask(task models.Task) {
 	s.taskQueue <- task
 }
 
-// GetExpression возвращает выражение по ID.
 func (s *Storage) GetExpression(id string) *models.Expression {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	return s.expressions[id]
 }
 
-// GetExpressions возвращает список всех выражений.
 func (s *Storage) GetExpressions() []*models.Expression {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -50,7 +44,6 @@ func (s *Storage) GetExpressions() []*models.Expression {
 	return result
 }
 
-// GetTask возвращает следующую задачу из очереди (блокирует, если задач нет).
 func (s *Storage) GetTask() models.Task {
 	return <-s.taskQueue
 }
