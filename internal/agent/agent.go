@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"fmt"
 
 	"go.uber.org/zap"
 	"digitalcalc/internal/calculator"
@@ -30,19 +31,32 @@ func Work(logger *zap.Logger) {
 		return
 	}
 
-	postResult(logger, task.ID, result)
+	if err := postResult(logger, task.ID, result); err != nil {
+		logger.Error("Failed to post result", zap.String("id", task.ID), zap.Error(err))
+		return
+	}
 }
 
-func postResult(logger *zap.Logger, id string, result float64) {
+func postResult(logger *zap.Logger, id string, result float64) error {
 	data := struct {
 		ID     string  `json:"id"`
 		Result float64 `json:"result"`
 	}{ID: id, Result: result}
-	body, _ := json.Marshal(data)
+	body, err := json.Marshal(data)
+	if err != nil {
+		logger.Error("Failed to marshal result", zap.String("id", id), zap.Error(err))
+		return err
+	}
 	resp, err := http.Post("http://localhost:8080/internal/task/result", "application/json", bytes.NewBuffer(body))
-	if err != nil || resp.StatusCode != http.StatusOK {
+	if err != nil {
 		logger.Error("Failed to post result", zap.String("id", id), zap.Error(err))
-		return
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("Unexpected status code", zap.String("id", id), zap.Int("status", resp.StatusCode))
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 	logger.Info("Result posted successfully", zap.String("id", id), zap.Float64("result", result))
+	return nil
 }
