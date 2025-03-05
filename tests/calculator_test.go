@@ -3,10 +3,8 @@ package tests
 import (
 	"testing"
 
-	"github.com/mpkelevra23/arithmetic-web-service/internal/calculator"
 )
 
-// TestCalc проверяет корректность работы функции Calc(expression string) (float64, error).
 func TestCalc(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -59,26 +57,26 @@ func TestCalc(t *testing.T) {
 		{
 			name:     "Деление на ноль",
 			expr:     "10 / (5 - 5)",
-			expected: 0, // Результат не важен, так как ожидается ошибка
+			expected: 0, 
 			err:      true,
 		},
 		{
 			name:     "Отсутствие закрывающей скобки",
 			expr:     "(1 + 2 * 3",
-			expected: 0, // Результат не важен, так как ожидается ошибка
+			expected: 0, 
 			err:      true,
 		},
 		{
 			name:     "Неверный токен",
 			expr:     "2 + a",
-			expected: 0, // Результат не важен, так как ожидается ошибка
+			expected: 0, 
 			err:      true,
 		},
 		{
 			name:     "Пустая строка",
 			expr:     "",
-			expected: 0,    // Результат не важен, так как может быть ошибка или 0
-			err:      true, // Предполагаем, что пустая строка невалидна
+			expected: 0,    
+			err:      true, 
 		},
 		{
 			name:     "Только число",
@@ -89,19 +87,19 @@ func TestCalc(t *testing.T) {
 		{
 			name:     "Многоступенчатые скобки",
 			expr:     "((2 + 3) * (4 - 1)) / 5",
-			expected: 3, // (5 * 3)/5 = 3
+			expected: 3, 
 			err:      false,
 		},
 		{
 			name:     "Выражение с пробелами и табуляциями",
 			expr:     "  7 \t* ( 8 + 2 ) ",
-			expected: 70, // 7 * 10 = 70
+			expected: 70,
 			err:      false,
 		},
 		{
 			name:     "Выражение с несколькими операторами подряд",
 			expr:     "1 + 2 - 3 + 4",
-			expected: 4, // 1+2=3; 3-3=0; 0+4=4
+			expected: 4, 
 			err:      false,
 		},
 		{
@@ -116,12 +114,10 @@ func TestCalc(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := calculator.Calc(tt.expr)
 			if tt.err {
-				// Проверяем наличие ожидаемой ошибки
 				if err == nil {
 					t.Errorf("Calc(%q) = %v, ожидается ошибка", tt.expr, result)
 				}
 			} else {
-				// Проверяем отсутствие ошибки и соответствие результата
 				if err != nil {
 					t.Errorf("Calc(%q) вернул ошибку: %v, ожидается %v", tt.expr, err, tt.expected)
 				} else if result != tt.expected {
