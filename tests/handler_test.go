@@ -4,27 +4,22 @@ import (
 	"bytes"
 	"encoding/json"
 	"testing"
-
-	"github.com/mpkelevra23/arithmetic-web-service/errors"
-	"github.com/mpkelevra23/arithmetic-web-service/internal/handler"
+	
+	"digitalcalc/internal/handler"
 	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 )
 
-// TestCalculateHandler проверяет работу HTTP-обработчика CalculateHandler.
 func TestCalculateHandler(t *testing.T) {
-	// Инициализация логгера
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		t.Fatalf("Не удалось инициализировать логгер: %v", err)
 	}
 	defer logger.Sync()
 
-	// Инициализация обработчика
 	handlerFunc := handler.CalculateHandler(logger)
 
-	// Определение тестовых случаев
 	tests := []struct {
 		name           string
 		method         string
@@ -69,22 +64,22 @@ func TestCalculateHandler(t *testing.T) {
 		},
 		{
 			name:           "Unsupported HTTP Method",
-			method:         http.MethodGet, // Используем неподдерживаемый метод
-			payload:        nil,            // Нет тела запроса
+			method:         http.MethodGet, 
+			payload:        nil,            
 			expectedStatus: http.StatusMethodNotAllowed,
 			expectedBody:   map[string]string{"error": errors.ErrUnsupportedMethod},
 		},
 		{
 			name:           "Malformed JSON",
 			method:         http.MethodPost,
-			payload:        `{"expression": "1 + 2",`, // Неправильный JSON
+			payload:        `{"expression": "1 + 2",`, 
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   map[string]string{"error": errors.ErrMalformedJSON},
 		},
 		{
 			name:           "Expression Too Long",
 			method:         http.MethodPost,
-			payload:        map[string]string{"expression": generateLongExpression(1001)}, // Предполагаем, что 1001 символ превышает лимит
+			payload:        map[string]string{"expression": generateLongExpression(1001)}, 
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedBody:   map[string]string{"error": errors.ErrTooLongExpression},
 		},
@@ -105,12 +100,11 @@ func TestCalculateHandler(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt // Захват переменной для параллельного выполнения
+		tt := tt 
 		t.Run(tt.name, func(t *testing.T) {
 			var reqBody []byte
 			var err error
 
-			// Подготовка тела запроса
 			switch payload := tt.payload.(type) {
 			case string:
 				reqBody = []byte(payload)
@@ -125,31 +119,25 @@ func TestCalculateHandler(t *testing.T) {
 				t.Fatalf("Неподдерживаемый тип payload: %T", payload)
 			}
 
-			// Создание нового HTTP запроса
 			req := httptest.NewRequest(tt.method, "/api/v1/calculate", bytes.NewBuffer(reqBody))
 			req.Header.Set("Content-Type", "application/json")
 			if tt.name == "Trigger Internal Server Error by Header" {
 				req.Header.Set("X-Trigger-500", "true")
 			}
 
-			// Создание ResponseRecorder для записи ответа
 			rr := httptest.NewRecorder()
 
-			// Вызов обработчика
 			handlerFunc.ServeHTTP(rr, req)
 
-			// Проверка статуса ответа
 			if rr.Code != tt.expectedStatus {
 				t.Errorf("Ожидался статус %d, получен %d", tt.expectedStatus, rr.Code)
 			}
 
-			// Декодирование тела ответа
 			var responseBody map[string]string
 			if err := json.Unmarshal(rr.Body.Bytes(), &responseBody); err != nil {
 				t.Fatalf("Не удалось декодировать тело ответа: %v", err)
 			}
 
-			// Проверка соответствия ожидаемого и фактического тела ответа
 			for key, expectedValue := range tt.expectedBody {
 				if value, exists := responseBody[key]; !exists || value != expectedValue {
 					t.Errorf("Для ключа '%s' ожидалось '%s', получено '%s'", key, expectedValue, value)
@@ -159,7 +147,6 @@ func TestCalculateHandler(t *testing.T) {
 	}
 }
 
-// generateLongExpression создает строку арифметического выражения заданной длины.
 func generateLongExpression(length int) string {
 	expression := ""
 	for i := 0; i < length; i++ {
@@ -167,3 +154,4 @@ func generateLongExpression(length int) string {
 	}
 	return expression
 }
+
