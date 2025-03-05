@@ -2,14 +2,16 @@ package orchestrator
 
 import (
 	"encoding/json"
+	"fmt"
+	"math/rand"
 	"net/http"
 	"sync"
+	"time"
 
 	"digitalcalc/internal/models"
 	"go.uber.org/zap"
 )
 
-// Server управляет API оркестратора.
 type Server struct {
 	logger      *zap.Logger
 	parser      *Parser
@@ -18,7 +20,6 @@ type Server struct {
 	mutex       sync.Mutex
 }
 
-// NewServer создает новый сервер оркестратора.
 func NewServer(logger *zap.Logger) *Server {
 	return &Server{
 		logger:      logger,
@@ -28,7 +29,6 @@ func NewServer(logger *zap.Logger) *Server {
 	}
 }
 
-// HandleCalculate обрабатывает запрос на вычисление выражения.
 func (s *Server) HandleCalculate(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Expression string `json:"expression"`
@@ -41,8 +41,9 @@ func (s *Server) HandleCalculate(w http.ResponseWriter, r *http.Request) {
 
 	id := GenerateID()
 	expression := &models.Expression{
-		ID:     id,
-		Status: "pending",
+		ID:      id,
+		RawExpr: req.Expression,
+		Status:  "pending",
 	}
 	s.addExpression(expression)
 
@@ -60,7 +61,6 @@ func (s *Server) HandleCalculate(w http.ResponseWriter, r *http.Request) {
 	s.logger.Info("Calculation request received", zap.String("id", id), zap.String("expression", req.Expression))
 }
 
-// HandleGetExpressions возвращает список всех выражений.
 func (s *Server) HandleGetExpressions(w http.ResponseWriter, r *http.Request) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -77,7 +77,6 @@ func (s *Server) HandleGetExpressions(w http.ResponseWriter, r *http.Request) {
 	s.logger.Info("Expressions list retrieved", zap.Int("count", len(expressions)))
 }
 
-// HandleGetExpressionByID возвращает выражение по ID.
 func (s *Server) HandleGetExpressionByID(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Path[len("/api/v1/expressions/"):]
 	s.mutex.Lock()
@@ -92,7 +91,6 @@ func (s *Server) HandleGetExpressionByID(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-// HandleGetTask возвращает следующую задачу из очереди.
 func (s *Server) HandleGetTask(w http.ResponseWriter, r *http.Request) {
 	select {
 	case task := <-s.taskQueue:
@@ -104,7 +102,6 @@ func (s *Server) HandleGetTask(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// HandlePostTaskResult обрабатывает результат задачи от агента.
 func (s *Server) HandlePostTaskResult(w http.ResponseWriter, r *http.Request) {
 	var result struct {
 		ID     string  `json:"id"`
@@ -121,7 +118,8 @@ func (s *Server) HandlePostTaskResult(w http.ResponseWriter, r *http.Request) {
 
 	if expr, exists := s.expressions[result.ID]; exists {
 		expr.Status = "done"
-		expr.Result = result.Result
+		resultStr := fmt.Sprintf("%f", result.Result) 
+		expr.Result = &resultStr
 		w.WriteHeader(http.StatusOK)
 		s.logger.Info("Task result processed", zap.String("id", result.ID), zap.Float64("result", result.Result))
 	} else {
@@ -130,19 +128,17 @@ func (s *Server) HandlePostTaskResult(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// addExpression добавляет выражение в хранилище.
 func (s *Server) addExpression(expr *models.Expression) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.expressions[expr.ID] = expr
 }
 
-// addTask добавляет задачу в очередь.
 func (s *Server) addTask(task models.Task) {
 	s.taskQueue <- task
 }
 
-// GenerateID генерирует уникальный идентификатор.
 func GenerateID() string {
-	return "exp-" + uuid.New().String() // Используйте реальную генерацию UUID
+	rand.Seed(time.Now().UnixNano())
+	return fmt.Sprintf("exp-%d-%d", time.Now().UnixNano(), rand.Intn(1000000))
 }
