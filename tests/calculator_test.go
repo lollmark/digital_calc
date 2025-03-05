@@ -3,6 +3,7 @@ package tests
 import (
 	"testing"
 
+	"digitalcalc/internal/calculator"
 )
 
 func TestCalc(t *testing.T) {
@@ -75,7 +76,7 @@ func TestCalc(t *testing.T) {
 		{
 			name:     "Пустая строка",
 			expr:     "",
-			expected: 0,    
+			expected: 0,    \
 			err:      true, 
 		},
 		{
@@ -93,7 +94,7 @@ func TestCalc(t *testing.T) {
 		{
 			name:     "Выражение с пробелами и табуляциями",
 			expr:     "  7 \t* ( 8 + 2 ) ",
-			expected: 70,
+			expected: 70, 
 			err:      false,
 		},
 		{
@@ -127,3 +128,4 @@ func TestCalc(t *testing.T) {
 		})
 	}
 }
+
