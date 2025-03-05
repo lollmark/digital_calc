@@ -1,7 +1,9 @@
 package orchestrator
 
 import (
+	"digitalcalc/internal/models"
 	"testing"
+
 	"go.uber.org/zap"
 )
 
@@ -19,10 +21,10 @@ func TestParseExpression(t *testing.T) {
 		want       float64
 		wantErr    bool
 	}{
-		{"2 + 2 * 2", 6, false},    // 2 + (2 * 2) = 6
-		{"10 / 2 - 1", 4, false},   // (10 / 2) - 1 = 4
-		{"1 / 0", 0, true},         // Деление на ноль
-		{"invalid", 0, true},       // Некорректное выражение
+		{"2 + 2 * 2", 6, false},   
+		{"10 / 2 - 1", 4, false},   
+		{"1 / 0", 0, true},         
+		{"invalid", 0, true},       
 	}
 
 	for _, tt := range tests {
