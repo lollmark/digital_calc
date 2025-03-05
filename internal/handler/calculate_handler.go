@@ -9,10 +9,8 @@ import (
 	"digitalcalc/internal/orchestrator"
 )
 
-// CalculateHandler обрабатывает запросы на вычисление арифметического выражения.
 func CalculateHandler(logger *zap.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Декодируем тело запроса
 		var req struct {
 			Expression string `json:"expression"`
 		}
@@ -22,24 +20,22 @@ func CalculateHandler(logger *zap.Logger) http.HandlerFunc {
 			return
 		}
 
-		// Генерируем уникальный ID для выражения
 		id := orchestrator.GenerateID()
 		expression := &models.Expression{
-			ID:     id,
-			Status: "pending",
+			ID:      id,
+			RawExpr: req.Expression,
+			Status:  "pending",
 		}
 
-		// Добавляем выражение в хранилище оркестратора
-		orchestrator.AddExpression(expression)
+		storage := orchestrator.NewStorage()
+		storage.AddExpression(expression)
 
-		// Создаём задачу и добавляем её в очередь
 		task := models.Task{
 			ID:         id,
 			Expression: req.Expression,
 		}
-		orchestrator.AddTask(task)
+		storage.AddTask(task) 
 
-		// Формируем и отправляем ответ
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(struct {
@@ -48,4 +44,4 @@ func CalculateHandler(logger *zap.Logger) http.HandlerFunc {
 
 		logger.Info("Calculation request received", zap.String("id", id), zap.String("expression", req.Expression))
 	}
-}
+}	
