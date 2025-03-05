@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"go.uber.org/zap"
 	"digitalcalc/internal/calculator"
@@ -25,7 +24,7 @@ func Work(logger *zap.Logger) {
 		return
 	}
 
-	result, err := calculator.Evaluate(task.Expression)
+	result, err := calculator.Calc(task.Expression)
 	if err != nil {
 		logger.Error("Failed to evaluate expression", zap.String("expression", task.Expression), zap.Error(err))
 		return
