@@ -5,10 +5,8 @@ import (
 	"strconv"
 )
 
-// TokenType представляет тип токена.
 type TokenType string
 
-// Поддерживаемые типы токенов.
 const (
 	TokenPlus     TokenType = "+"
 	TokenMinus    TokenType = "-"
@@ -19,14 +17,12 @@ const (
 	TokenNumber   TokenType = "NUMBER"
 )
 
-// Token представляет токен в выражении.
 type Token struct {
-	Type TokenType // Тип токена
-	Name string    // Строковое представление токена
+	Type TokenType 
+	Name string   
 }
 
-// Calc вычисляет результат арифметического выражения.
-// Возвращает результат вычисления и ошибку, если она возникла.
+
 func Calc(expression string) (float64, error) {
 	tokens := tokenize(expression)
 
@@ -42,7 +38,6 @@ func Calc(expression string) (float64, error) {
 	return result, nil
 }
 
-// tokenize разбивает строку на токены.
 func tokenize(expression string) []Token {
 	var tokens []Token
 	var currentToken string
@@ -72,7 +67,6 @@ func tokenize(expression string) []Token {
 	return tokens
 }
 
-// parseExpression обрабатывает сложение и вычитание.
 func parseExpression(tokens []Token, pos int) (float64, int, error) {
 	left, pos, err := parseTerm(tokens, pos)
 	if err != nil {
@@ -103,7 +97,6 @@ func parseExpression(tokens []Token, pos int) (float64, int, error) {
 	return left, pos, nil
 }
 
-// parseTerm обрабатывает умножение и деление.
 func parseTerm(tokens []Token, pos int) (float64, int, error) {
 	left, pos, err := parseFactor(tokens, pos)
 	if err != nil {
@@ -137,14 +130,12 @@ func parseTerm(tokens []Token, pos int) (float64, int, error) {
 	return left, pos, nil
 }
 
-// parseFactor обрабатывает числа, унарные операторы и скобки.
-// Возвращает значение, позицию после обработки и ошибку, если она возникла.
+
 func parseFactor(tokens []Token, pos int) (float64, int, error) {
 	if pos >= len(tokens) {
 		return 0, pos, fmt.Errorf("insufficient tokens")
 	}
 
-	// Обработка унарных операторов
 	if tokens[pos].Type == TokenPlus || tokens[pos].Type == TokenMinus {
 		operator := tokens[pos].Type
 		value, newPos, err := parseFactor(tokens, pos+1)
@@ -157,7 +148,6 @@ func parseFactor(tokens []Token, pos int) (float64, int, error) {
 		return value, newPos, nil
 	}
 
-	// Обработка скобок
 	if tokens[pos].Type == TokenLParen {
 		result, newPos, err := parseExpression(tokens, pos+1)
 		if err != nil {
@@ -169,7 +159,6 @@ func parseFactor(tokens []Token, pos int) (float64, int, error) {
 		return result, newPos + 1, nil
 	}
 
-	// Обработка чисел
 	if tokens[pos].Type != TokenNumber {
 		return 0, pos, fmt.Errorf("invalid token: %s", tokens[pos].Name)
 	}
