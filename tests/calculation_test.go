@@ -3,8 +3,8 @@ package tests
 import (
 	"testing"
 
-	"github.com/lollmark/calculator_go/internal"
-	"github.com/lollmark/calculator_go/pkg/calculator"
+	"github.com/lollmark/digital_calc/internal"
+	"github.com/lollmark/digital_calc/pkg/calculator"
 )
 
 func TestCompute(t *testing.T) {
