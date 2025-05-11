@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/lollmark/calculator_go/internal"
+	"github.com/lollmark/digital_calc/internal"
 )
 
 func main() {
