@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/lollmark/calculator_go/internal"
+	"github.com/lollmark/digital_calc/internal"
 )
 
 func evalAST(node *application.ASTNode) (float64, error) {
