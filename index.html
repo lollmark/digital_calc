@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Calculator_go</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #090909; }
+    input, button { padding: 8px; font-size: 16px; margin: 4px 0; }
+    #result { margin-top: 20px; font-weight: bold; }
+    #auth, #calculator { max-width: 400px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Calculator</h1>
+
+  <div id="auth">
+    <h2>Вход / Регистрация</h2>
+    <form id="registerForm">
+      <label for="regLogin">Логин:</label><br>
+      <input type="text" id="regLogin" required><br>
+      <label for="regPassword">Пароль:</label><br>
+      <input type="password" id="regPassword" required><br>
+      <button type="submit">Зарегистрироваться</button>
+    </form>
+    <form id="loginForm" style="margin-top:20px;">
+      <label for="loginLogin">Логин:</label><br>
+      <input type="text" id="loginLogin" required><br>
+      <label for="loginPassword">Пароль:</label><br>
+      <input type="password" id="loginPassword" required><br>
+      <button type="submit">Войти</button>
+    </form>
+    <div id="authMessage"></div>
+  </div>
+
+  <div id="calculator" class="hidden">
+    <h2>Вычислитель</h2>
+    <form id="calcForm">
+      <label for="expression">Введите выражение:</label><br>
+      <input type="text" id="expression" placeholder="Например, 2+2*2" required><br>
+      <button type="submit">Вычислить</button>
+    </form>
+    <div id="result"></div>
+    <button id="logoutBtn" style="margin-top:20px;">Выйти</button>
+  </div>
+
+  <script>
+    const API = 'http://localhost:8080/api/v1';
+    let token = null;
+
+    function authHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      };
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const login = document.getElementById('regLogin').value;
+      const pwd = document.getElementById('regPassword').value;
+
+      try {
+        const res = await fetch(`${API}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login, password: pwd })
+        });
+        document.getElementById('authMessage').innerText =
+          res.ok ? 'Успешная регистрация, теперь войдите.' : 'Ошибка регистрации.';
+      } catch (err) {
+        document.getElementById('authMessage').innerText = 'Сервер не отвечает.';
+      }
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const login = document.getElementById('loginLogin').value;
+      const pwd = document.getElementById('loginPassword').value;
+
+      try {
+        const res = await fetch(`${API}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login, password: pwd })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          token = data.token;
+          document.getElementById('auth').classList.add('hidden');
+          document.getElementById('calculator').classList.remove('hidden');
+        } else {
+          document.getElementById('authMessage').innerText = 'Неверные учетные данные.';
+        }
+      } catch (err) {
+        document.getElementById('authMessage').innerText = 'Ошибка сети.';
+      }
+    });
+
+    document.getElementById('calcForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const expr = document.getElementById('expression').value;
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerText = 'Отправка запроса...';
+
+      try {
+        const resp = await fetch(`${API}/calculate`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ expression: expr })
+        });
+
+        if (!resp.ok) {
+          resultDiv.innerText = `Ошибка сервера: ${resp.status}`;
+          return;
+        }
+
+        const data = await resp.json();
+        if (!data.id) {
+          resultDiv.innerText = 'Ошибка при создании вычисления.';
+          return;
+        }
+
+        const exprId = data.id;
+        const intervalId = setInterval(async () => {
+          try {
+            const statusResp = await fetch(`${API}/expressions/${exprId}`, {
+              headers: authHeaders()
+            });
+
+            if (!statusResp.ok) {
+              resultDiv.innerText = `Ошибка получения статуса: ${statusResp.status}`;
+              clearInterval(intervalId);
+              return;
+            }
+
+            const statusData = await statusResp.json();
+            console.log('Ответ сервера:', statusData);
+
+            if (!statusData || !statusData.expression) {
+              resultDiv.innerText = 'Неверный формат ответа сервера.';
+              clearInterval(intervalId);
+              return;
+            }
+
+            if (statusData.expression.Status === 'done') {
+              resultDiv.innerText = 'Результат: ' + (statusData.expression.Result ?? 'не определён');
+              clearInterval(intervalId);
+            } else {
+              resultDiv.innerText = 'Статус: ' + statusData.expression.Status;
+            }
+          } catch (err) {
+            console.error('Ошибка запроса:', err);
+            resultDiv.innerText = 'Ошибка получения статуса.';
+            clearInterval(intervalId);
+          }
+        }, 1000);
+
+      } catch (err) {
+        console.error('Ошибка отправки выражения:', err);
+        resultDiv.innerText = 'Ошибка отправки выражения.';
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      token = null;
+      document.getElementById('calculator').classList.add('hidden');
+      document.getElementById('auth').classList.remove('hidden');
+      document.getElementById('authMessage').innerText = '';
+      document.getElementById('result').innerText = '';
+    });
+  </script>
+
+</body>
+</html>
